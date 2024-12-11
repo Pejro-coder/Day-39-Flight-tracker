@@ -3,8 +3,7 @@ import datetime
 
 client_API_key = ""
 client_API_secret = ""
-sheety = ""
-
+sheety_authorization = ""
 
 # -------------------------------- AMADEUS FLIGHT PRICES --------------------------------
 
@@ -22,26 +21,38 @@ parameters = {"origin": "PAR",
 response = requests.get(url=api_endpoint, headers={"Authorization": f"Bearer {access_token}"}, params=parameters)
 
 flights = response.json()["data"]
-print(flights)
+# print(flights)
 
 # -------------------------------- SHEETY UPDATE IATA CODES --------------------------------
 sheety_endpoint = "https://api.sheety.co/0fd8b882fdcc644ed28a11adcf6f5b4c/flightDeals/prices"
 
-response = requests.get(url=sheety_endpoint, headers={"Authorization": f"Bearer {sheety}"})
+response = requests.get(url=sheety_endpoint, headers={"Authorization": f"Bearer {sheety_authorization}"})
 data = response.json()
-print(data)
+print("sheety:", data)
 count = 1
 for row in data["prices"]:
     count += 1
-    city = row["city"]
-    print(count, city)
+    if row["iataCode"] == "":
+        # exception handling, because for some cities I don't get any adata back
+        try:
+            city = row["city"]
+            print(count, city)
 
-    parameters = {"subType": "CITY",
-                  "keyword": city,
-                  }
+            parameters = {"subType": "CITY",
+                          "keyword": city}
+            response = requests.get(url="https://test.api.amadeus.com/v1/reference-data/locations",
+                                    headers={"Authorization": f"Bearer {access_token}"},
+                                    params=parameters)
+            print(response.json())
+            code = response.json()["data"][0]["iataCode"]
+            print(code)
 
-    response = requests.get(url="https://test.api.amadeus.com/v1/reference-data/locations",
-                            headers={"Authorization": f"Bearer {access_token}"},
-                            params=parameters)
+            # add missing codes to the sheet with a put method
+            response = requests.put(url=f"{sheety_endpoint}/{row['id']}",
+                                    headers={"Authorization": f"Bearer {sheety_authorization}"},
+                                    json={"price": {"iataCode": code}})
+            # # print(f"{sheety_endpoint}/{row["id"]}")
+            print("put:", response)
 
-    print(response.json())
+        except Exception as e:
+            print("------ Exception:", e)
