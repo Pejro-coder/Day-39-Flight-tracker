@@ -6,8 +6,6 @@ client_API_secret = ""
 sheety_authorization = ""
 
 # -------------------------------- AMADEUS FLIGHT PRICES --------------------------------
-
-
 # get the access token
 response = requests.post(url="https://test.api.amadeus.com/v1/security/oauth2/token",
                          headers={"Content-Type": "application/x-www-form-urlencoded"},
@@ -29,15 +27,17 @@ sheety_endpoint = "https://api.sheety.co/0fd8b882fdcc644ed28a11adcf6f5b4c/flight
 response = requests.get(url=sheety_endpoint, headers={"Authorization": f"Bearer {sheety_authorization}"})
 data = response.json()
 print("sheety:", data)
-count = 1
+
+# adding IATA codes to empty fields
 for row in data["prices"]:
-    count += 1
     if row["iataCode"] == "":
         # exception handling, because for some cities I don't get any adata back
         try:
-            city = row["city"]
-            print(count, city)
+            city = row["city"].lower()
+            id = row["id"]
+            print(id, city)
 
+            # get IATA code based on the "city" parameter
             parameters = {"subType": "CITY",
                           "keyword": city}
             response = requests.get(url="https://test.api.amadeus.com/v1/reference-data/locations",
@@ -45,14 +45,12 @@ for row in data["prices"]:
                                     params=parameters)
             print(response.json())
             code = response.json()["data"][0]["iataCode"]
-            print(code)
 
             # add missing codes to the sheet with a put method
             response = requests.put(url=f"{sheety_endpoint}/{row['id']}",
                                     headers={"Authorization": f"Bearer {sheety_authorization}"},
                                     json={"price": {"iataCode": code}})
-            # # print(f"{sheety_endpoint}/{row["id"]}")
-            print("put:", response)
+
 
         except Exception as e:
             print("------ Exception:", e)
