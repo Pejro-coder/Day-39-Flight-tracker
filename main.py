@@ -1,37 +1,46 @@
 import requests
 import datetime
+from pprint import pprint
 
-client_API_key = ""
-client_API_secret = ""
-sheety_authorization = ""
+
+# -------------------------------- READ GOOGLE SHEET WITH SHEETY --------------------------------
+sheety_endpoint = "https://api.sheety.co/0fd8b882fdcc644ed28a11adcf6f5b4c/flightDeals/prices"
+sheety_authorization_token = "321adsac"
+
+response = requests.get(url=sheety_endpoint, headers={"Authorization": f"Bearer {sheety_authorization_token}"})
+data = response.json()
+for row in data["prices"]:
+    print(row)
 
 # -------------------------------- AMADEUS FLIGHT PRICES --------------------------------
-# get the access token
+amadeus_flight_client_API_key = "nX7rnwG7X1CdN3uylrYfeGNRleS4kMqp"
+amadeus_flight_client_API_secret = "X4qlQ84auK1dU98z"
+
+# Get the ACCESS TOKEN.
+# Guide is here: https://developers.amadeus.com/self-service/apis-docs/guides/developer-guides/quick-start/#step-2-get-your-api-key
 response = requests.post(url="https://test.api.amadeus.com/v1/security/oauth2/token",
                          headers={"Content-Type": "application/x-www-form-urlencoded"},
-                         data=f"grant_type=client_credentials&client_id={client_API_key}&client_secret={client_API_secret}")
+                         data=f"grant_type=client_credentials&client_id={amadeus_flight_client_API_key}&client_secret={amadeus_flight_client_API_secret}")
+
+print("\nAmadeus access token response code:", response)
+access_token = response.json()["access_token"]
+print("access token:", access_token)
 
 # get the "cheap" flights
-access_token = response.json()["access_token"]
 api_endpoint = "https://test.api.amadeus.com/v1/shopping/flight-destinations"
 parameters = {"origin": "PAR",
               "maxPrice": 250}
 response = requests.get(url=api_endpoint, headers={"Authorization": f"Bearer {access_token}"}, params=parameters)
 
 flights = response.json()["data"]
-# print(flights)
+pprint(flights)
 
-# -------------------------------- SHEETY UPDATE IATA CODES --------------------------------
-sheety_endpoint = "https://api.sheety.co/0fd8b882fdcc644ed28a11adcf6f5b4c/flightDeals/prices"
+print("\n\n---------------------\n\n")
 
-response = requests.get(url=sheety_endpoint, headers={"Authorization": f"Bearer {sheety_authorization}"})
-data = response.json()
-print("sheety:", data)
-
-# adding IATA codes to empty fields
+# adding IATA codes to empty fields in SHEET with sheety
 for row in data["prices"]:
     if row["iataCode"] == "":
-        # exception handling, because for some cities I don't get any adata back
+        # exception handling, because for some cities I don't get any data back
         try:
             city = row["city"].lower()
             id = row["id"]
@@ -48,7 +57,7 @@ for row in data["prices"]:
 
             # add missing codes to the sheet with a put method
             response = requests.put(url=f"{sheety_endpoint}/{row['id']}",
-                                    headers={"Authorization": f"Bearer {sheety_authorization}"},
+                                    headers={"Authorization": f"Bearer {sheety_authorization_token}"},
                                     json={"price": {"iataCode": code}})
 
 
