@@ -2,20 +2,34 @@ import requests
 import time
 import json
 from pprint import pprint
-from amadeus_client import AmadeusClient
-from sheety_client import SheetyClient
 
 amadeus_flight_client_API_key = "nX7rnwG7X1CdN3uylrYfeGNRleS4kMqp"
 amadeus_flight_client_API_secret = "X4qlQ84auK1dU98z"
-sheety_authorization_token = "321adsac"
-
-# -------------------------------- AMADEUS ACCESS TOKEN --------------------------------
-amadeus = AmadeusClient(amadeus_flight_client_API_key, amadeus_flight_client_API_secret)
-amadeus_access_token = amadeus.access_token
 
 # -------------------------------- READ GOOGLE SHEET WITH SHEETY --------------------------------
-sheety = SheetyClient(sheety_authorization_token)
-sheety_data = sheety.data
+sheety_endpoint = "https://api.sheety.co/0fd8b882fdcc644ed28a11adcf6f5b4c/flightDeals/prices"
+sheety_authorization_token = "321adsac"
+
+sheety_get_response = requests.get(url=sheety_endpoint,
+                                   headers={"Authorization": f"Bearer {sheety_authorization_token}"}
+                                   )
+
+sheety_data = sheety_get_response.json()
+print(f"1. getting sheet data. Status code: {sheety_get_response.status_code}\n")
+
+# -------------------------------- AMADEUS ACCESS TOKEN --------------------------------
+# Guide is here: https://developers.amadeus.com/self-service/apis-docs/guides/developer-guides/quick-start/#step-2-get-your-api-key
+amadeus_token_response = requests.post(url="https://test.api.amadeus.com/v1/security/oauth2/token",
+                         headers={"Content-Type": "application/x-www-form-urlencoded"},
+                         data=f"grant_type=client_credentials&client_id={amadeus_flight_client_API_key}&client_secret={amadeus_flight_client_API_secret}")
+
+amadeus_response_data = amadeus_token_response.json()
+if "access_token" not in amadeus_response_data:
+    print("Failed to retrieve access token", amadeus_response_data)
+
+print(f"2. getting amadeus access token. Status code: {amadeus_token_response.status_code}\n")
+
+amadeus_access_token = amadeus_response_data["access_token"]
 
 # ------------ Adding IATA codes to empty fields in Google Sheets with sheety ------------
 # API location: https://developers.amadeus.com/self-service/category/flights/api-doc/airport-and-city-search/api-reference
