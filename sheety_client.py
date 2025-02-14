@@ -10,7 +10,6 @@ class SheetyClient:
     def __init__(self, authorization_token):
         self.token = authorization_token
         self.data = None
-        self.get_sheety_data()
 
     def get_sheety_data(self):
         response = requests.get(url=SheetyClient.SHEETY_ENDPOINT,
@@ -23,3 +22,16 @@ class SheetyClient:
         else:
             print(f"❌ Failed to get Sheety data: {response.json()}")
 
+    def write_sheety_data(self, iata_code, key, city):
+        # Putting the IATA codes in the sheet
+        body = {
+            "price": {
+                "iataCode": iata_code,
+            }
+        }
+        sheety_put_response = requests.put(url=f"{SheetyClient.SHEETY_ENDPOINT}/{key}",
+                                           headers={"Authorization": f"Bearer {self.token}"},
+                                           json=body)
+        print(sheety_put_response.status_code)
+        print("Finding the IATA code, updating sheet...", "Adding:", city.title(), "as", iata_code)
+        # print("put response status code:", response.status_code)

@@ -76,7 +76,7 @@ for row in sheety_data["prices"]:
                                                headers={"Authorization": f"Bearer {sheety_authorization_token}"},
                                                json=body)
             print("Finding the IATA code, updating sheet...", "Adding:", city.title(), "as", iata_code)
-            # print("put response status code:", response.status_code)
+
         else:
             print(f"......{iata_code} for {city} already added")
 
