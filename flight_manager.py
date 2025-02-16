@@ -96,8 +96,11 @@ class FlightManager:
 
                 if float(cheapest_price) < self.sheety_price:
                     print("EMAIL!!!!!!!!!!!!!EMAIL!!!!!!!!!!!!!EMAIL!!!!!!!!!!!!!")
+                    return self.city, self.iata_code
 
             except Exception as e:
                 print(f"{e}, possibly no data for {self.city.title()} - {self.iata_code}.")
         else:
             print(f"Skipping because this is the depart location: {self.iata_code}")
+
+        return None, None
