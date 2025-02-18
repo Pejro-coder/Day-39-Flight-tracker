@@ -7,7 +7,8 @@ class FlightManager:
     AIRPORT_AND_CITY_SEARCH = "https://test.api.amadeus.com/v1/reference-data/locations"
     FLIGHT_OFFERS_API = "https://test.api.amadeus.com/v2/shopping/flight-offers"
 
-    def __init__(self, row, amadeus_access_token, sheety_client):
+    def __init__(self, row, amadeus_access_token, sheety_client, notification_manager):
+        self.notification_manager = notification_manager
         self.row = row
         self.sheety_client = sheety_client
 
@@ -95,12 +96,12 @@ class FlightManager:
                 print("sheety price:", self.sheety_price)
 
                 if float(cheapest_price) < self.sheety_price:
-                    print("EMAIL!!!!!!!!!!!!!EMAIL!!!!!!!!!!!!!EMAIL!!!!!!!!!!!!!")
-                    return self.city, self.iata_code
+                    self.notification_manager.send_sms(iata_code=self.iata_code,
+                                                       city=self.city,
+                                                       cheapest_price=cheapest_price,
+                                                       sheety_price=self.sheety_price)
 
             except Exception as e:
                 print(f"{e}, possibly no data for {self.city.title()} - {self.iata_code}.")
         else:
             print(f"Skipping because this is the depart location: {self.iata_code}")
-
-        return None, None
